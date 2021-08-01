@@ -1,8 +1,8 @@
-use ::export::Exporter;
-use ::measure::MeasureRegistry;
-use ::measure::Measures;
-use ::simulation::Parameters;
-use ::structopt::StructOpt;
+use crate::export::Exporter;
+use crate::measure::MeasureRegistry;
+use crate::measure::Measures;
+use crate::simulation::Parameters;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name="ergothic simulation",
@@ -51,8 +51,8 @@ pub struct CmdArgs {
 /// Parses the command line arguments and produces simulation parameters.
 pub fn construct_parameters(name: String, measures: Measures, mut args: CmdArgs)
        -> Parameters {
-  let mut rng = ::rand::thread_rng();
-  use ::rand::distributions::Distribution;
+  let mut rng = rand::thread_rng();
+  use rand::distributions::Distribution;
   let exporter: Box<dyn Exporter>;
   if args.production_mode {
     if cfg!(debug_assertions) {
@@ -64,12 +64,12 @@ pub fn construct_parameters(name: String, measures: Measures, mut args: CmdArgs)
       let mongo_coll = args.mongo_coll
         .expect("Child argument --mongo_coll is required.");
       exporter = Box::new(
-        ::export::MongoExporter::new(&mongo, &mongo_db, &mongo_coll, None));
+        crate::export::MongoExporter::new(&mongo, &mongo_db, &mongo_coll, None));
     } else {
       panic!("Argument --mongo is required in production mode.");
     }
   } else {
-    exporter = Box::new(::export::DebugExporter::new());
+    exporter = Box::new(crate::export::DebugExporter::new());
   }
 
   let flush_interval_secs;
@@ -94,16 +94,16 @@ pub fn construct_parameters(name: String, measures: Measures, mut args: CmdArgs)
     args.flush_interval_randomization = 0.0;
   }
 
-  let flush_interval_min = ::std::cmp::max(1, 
+  let flush_interval_min = std::cmp::max(1,
       (flush_interval_secs as f64 * (1.0 - args.flush_interval_randomization))
       .round() as u64);
   let flush_interval_max = (flush_interval_secs as f64 *
                            (1.0 + args.flush_interval_randomization))
                            .round() as u64;
   let flush_interval_dist =
-    ::rand::distributions::Uniform::<u64>::new_inclusive(
+    rand::distributions::Uniform::<u64>::new_inclusive(
       flush_interval_min, flush_interval_max);
-  let flush_interval = ::std::time::Duration::from_secs(
+  let flush_interval = std::time::Duration::from_secs(
     flush_interval_dist.sample(&mut rng));
 
   let max_export_errors_in_row = args.max_export_errors_in_row;
@@ -118,15 +118,15 @@ pub fn construct_parameters(name: String, measures: Measures, mut args: CmdArgs)
 }
 
 pub fn run_simulation<S, F>(name: &str, reg: MeasureRegistry, measure_fn: F)
-  where S: ::simulation::Sample,
+  where S: crate::simulation::Sample,
         F: Fn(&S, &mut Measures) {
   let cmd_args = CmdArgs::from_args();
   if cmd_args.production_mode {
-    ::simple_logger::init().expect("Failed to initialize logger");
+    simple_logger::init().expect("Failed to initialize logger");
   } else {
     println!("Running ergothic simulation \"{}\".", name);
   }
   let parameters = construct_parameters(name.to_string(), reg.freeze(),
                                         cmd_args);
-  ::simulation::run(parameters, measure_fn);
+  crate::simulation::run(parameters, measure_fn);
 }

@@ -1,6 +1,6 @@
-use ::measure::Measures;
-use ::measure::MeasureRegistry;
-use ::std::time::SystemTime;
+use crate::measure::Measures;
+use crate::measure::MeasureRegistry;
+use std::time::SystemTime;
 
 /// Errors returned by the exporter. Contain a string describing the cause of
 /// the error.
@@ -30,7 +30,7 @@ impl DebugExporter {
       creation_timestamp: SystemTime::now(),
     }
   }
-  
+
   /// Format the results in a pretty table.
   fn pretty_table(measures: &Measures) -> ::prettytable::Table {
     use ::prettytable::Table;
@@ -132,9 +132,9 @@ impl MongoExporter {
 
 impl Exporter for MongoExporter {
   fn export(&mut self, measures: &Measures) -> Result<(), ExportError> {
-    let serialized_data = ::mongodb::to_bson(measures)
+    let serialized_data = mongodb::to_bson(measures)
         .expect("Serialization error");
-    if let ::mongodb::Bson::Document(doc) = serialized_data {
+    if let mongodb::Bson::Document(doc) = serialized_data {
       match self.collection.insert_one(doc, self.write_concern.clone()) {
         Ok(res) => {
           if res.acknowledged {

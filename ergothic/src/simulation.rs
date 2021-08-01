@@ -1,6 +1,6 @@
-use ::measure::Measures;
-use ::std::time::Duration;
-use ::std::time::SystemTime;
+use crate::measure::Measures;
+use std::time::Duration;
+use std::time::SystemTime;
 
 /// A configuration sample from the ergodic distribution must implement this
 /// trait in order to be used in the *ergothic* simulation.
@@ -37,12 +37,12 @@ pub struct Parameters {
 
   /// List of measures relevant to the simulation. Each `flush_interval`, the
   /// measures from that list will be exported to the data sink.
-  pub measures: ::measure::Measures,
+  pub measures: crate::measure::Measures,
 
   /// The polymorphic data exporter. Simulation engine will send measured data
   /// to the exporter every `flush_interval` seconds.
-  pub exporter: Box<dyn (::export::Exporter)>,
-  
+  pub exporter: Box<dyn (crate::export::Exporter)>,
+
   /// Interval between subsequent flushes of the accumulated values.
   pub flush_interval: Duration,
 
@@ -83,7 +83,7 @@ pub fn run<S: Sample, F>(mut parameters: Parameters, measure_fn: F)
           // continue the simulation.
           parameters.measures.reset();
         },
-        Err(::export::ExportError(ref err)) => {
+        Err(crate::export::ExportError(ref err)) => {
           export_errors_in_row += 1;
           // Export failed. Reporting an error and keeping the accumulated
           // expectations in hope of exporting them the next time.

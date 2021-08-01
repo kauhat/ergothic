@@ -1,5 +1,5 @@
-use ::accumulate::Acc;
-use ::std::collections::HashMap;
+use crate::accumulate::Acc;
+use std::collections::HashMap;
 
 /// Represents a physical observable. Measuring expectation values of
 /// observables is the purpose of any *ergothic* simulation.
@@ -82,7 +82,7 @@ impl MeasureRegistry {
       name_index: HashMap::new(),
     }
   }
-  
+
   /// Returns an immutable reference to the collection of measures.
   pub fn measures(&self) -> &Measures {
     &self.measures
@@ -101,7 +101,7 @@ impl MeasureRegistry {
   pub fn freeze(self) -> Measures {
     self.measures
   }
-  
+
   /// Registers a new measure with a given `name`. Returns a safely wrapped
   /// index of the measure in the collection of measures. If a measure with the
   /// same name has been registered before, panics.
