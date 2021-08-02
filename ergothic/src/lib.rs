@@ -11,7 +11,6 @@
 //! to any number, that technical part has already been taking care for you!
 
 extern crate argparse;
-extern crate bson;
 extern crate mongodb;
 extern crate prettytable;
 extern crate rand;

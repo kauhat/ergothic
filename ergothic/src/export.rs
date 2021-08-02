@@ -1,3 +1,5 @@
+use mongodb::options::InsertOneOptions;
+
 use crate::measure::Measures;
 use crate::measure::MeasureRegistry;
 use std::time::SystemTime;
@@ -32,11 +34,9 @@ impl DebugExporter {
   }
 
   /// Format the results in a pretty table.
-  fn pretty_table(measures: &Measures) -> ::prettytable::Table {
-    use ::prettytable::Table;
-    use ::prettytable::row::Row;
-    use ::prettytable::cell::Cell;
-    use ::prettytable::format::Alignment;
+  fn pretty_table(measures: &Measures) -> prettytable::Table {
+    use prettytable::{Table, Row, Cell};
+    use prettytable::format::Alignment;
     let mut table = Table::new();
     table.set_format(
         *::prettytable::format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
@@ -97,9 +97,9 @@ impl Exporter for DebugExporter {
 /// However, serialization errors indicate a serious problem with the binary.
 /// Thus if one is encountered, `MongoExporter` panicks immediately.
 pub struct MongoExporter {
-  _client: ::mongodb::Client,
-  collection: ::mongodb::coll::Collection,
-  write_concern: Option<::mongodb::common::WriteConcern>,
+  _client: mongodb::sync::Client,
+  collection: mongodb::sync::Collection,
+  write_concern: Option<::mongodb::options::WriteConcern>,
   formatted_addr: String,
 }
 
@@ -114,13 +114,11 @@ impl MongoExporter {
   ///   /*write_concern=*/None);
   /// ```
   pub fn new(addr: &str, db_name: &str, coll_name: &str,
-             write_concern: Option<::mongodb::common::WriteConcern>)
+             write_concern: Option<::mongodb::options::WriteConcern>)
          -> MongoExporter {
-    use ::mongodb::ThreadedClient;
-    use ::mongodb::db::ThreadedDatabase;
-    let client = ::mongodb::Client::with_uri(addr)
+    let client = mongodb::sync::Client::with_uri_str(addr)
         .expect("Failed to initialize MongoDB client.");
-    let coll = client.db(db_name).collection(coll_name);
+    let coll = client.database(db_name).collection(coll_name);
     MongoExporter {
       _client: client,
       collection: coll,
@@ -132,13 +130,16 @@ impl MongoExporter {
 
 impl Exporter for MongoExporter {
   fn export(&mut self, measures: &Measures) -> Result<(), ExportError> {
-    let serialized_data = mongodb::to_bson(measures)
+    let serialized_data = mongodb::bson::to_bson(measures)
         .expect("Serialization error");
-    if let mongodb::Bson::Document(doc) = serialized_data {
-      match self.collection.insert_one(doc, self.write_concern.clone()) {
+    if let mongodb::bson::Bson::Document(doc) = serialized_data {
+      let options = InsertOneOptions::builder()
+        .write_concern(self.write_concern.clone())
+        .build();
+
+      match self.collection.insert_one(doc, options) {
         Ok(res) => {
-          if res.acknowledged {
-            if let Some(::mongodb::Bson::ObjectId(id)) = res.inserted_id {
+            if let mongodb::bson::Bson::ObjectId(id) = res.inserted_id {
               info!("Measurements flushed to {}, obj_id={}",
                     self.formatted_addr, id.to_hex());
               Ok(())
@@ -146,10 +147,6 @@ impl Exporter for MongoExporter {
               Err(ExportError(format!(
                   "MongoDB didn't return a new object ID.")))
             }
-          } else {
-            Err(ExportError(format!(
-                "MongoDB did not acknowledge measurements.")))
-          }
         },
         Err(err) => {
           Err(ExportError(format!("{:?}", err)))
