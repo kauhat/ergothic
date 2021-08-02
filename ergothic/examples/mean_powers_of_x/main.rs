@@ -16,8 +16,8 @@
 // Make sure to build the optimized binary.
 
 extern crate ergothic;
-extern crate pretty_env_logger;
-extern crate rand;
+// extern crate pretty_env_logger;
+// extern crate rand;
 
 // MySample is a configuration sample describing the system under consideration.
 // Here it only has a single value `x`.
@@ -62,7 +62,7 @@ impl ergothic::Sample for MySample {
 fn main() {
   let mut simulation = ergothic::Simulation::new(
       "mean values of powers of [0..1]");
-  
+
   let mut powers_of_x = Vec::with_capacity(10);
   for i in 0..10 {
     // Register a measure corresponding to X to the power of `i`.

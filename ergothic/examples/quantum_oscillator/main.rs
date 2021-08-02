@@ -1,5 +1,5 @@
 extern crate ergothic;
-extern crate rand;
+// extern crate rand;
 
 const N: usize = 30;  // Lattice size.
 const A: f64 = 0.5;   // Lattice spacing.
