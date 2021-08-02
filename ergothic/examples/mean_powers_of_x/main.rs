@@ -22,61 +22,60 @@ extern crate ergothic;
 // MySample is a configuration sample describing the system under consideration.
 // Here it only has a single value `x`.
 struct MySample {
-  x: f64,
-  rng: rand::rngs::ThreadRng,
-  unif: rand::distributions::Uniform<f64>,
+    x: f64,
+    rng: rand::rngs::ThreadRng,
+    unif: rand::distributions::Uniform<f64>,
 }
 
 impl ergothic::Sample for MySample {
-  // Prepare a randomized configuration. In our simple case, setting initial `x`
-  // to zero is enough.
-  fn prepare() -> MySample {
-    MySample {
-      x: 0.0,
-      rng: rand::thread_rng(),
-      unif: rand::distributions::Uniform::new_inclusive(0.0, 1.0),
+    // Prepare a randomized configuration. In our simple case, setting initial `x`
+    // to zero is enough.
+    fn prepare() -> MySample {
+        MySample {
+            x: 0.0,
+            rng: rand::thread_rng(),
+            unif: rand::distributions::Uniform::new_inclusive(0.0, 1.0),
+        }
     }
-  }
 
-  // On large configuration spaces, this function should move the randomized
-  // sample to a regular point of the configuration space. That is, there's a
-  // bias towards underrepresented points for recently initialized samples.
-  // Thermalization tries to get rid of this bias. Typically, this function
-  // usually calls mutate ~10-20 times. Here, it is only necessary to call it
-  // once.
-  fn thermalize(&mut self) {
-    self.mutate();
-  }
+    // On large configuration spaces, this function should move the randomized
+    // sample to a regular point of the configuration space. That is, there's a
+    // bias towards underrepresented points for recently initialized samples.
+    // Thermalization tries to get rid of this bias. Typically, this function
+    // usually calls mutate ~10-20 times. Here, it is only necessary to call it
+    // once.
+    fn thermalize(&mut self) {
+        self.mutate();
+    }
 
-  // The main function which drives the simulation engine. Applies a randomized
-  // mutation to the sample, thus making a single "step" in the configuration
-  // spaces. The walk is assumed to be ergodic (in simple words, mutate is
-  // assumed to not have any consistent bias.
-  fn mutate(&mut self) {
-    use rand::distributions::Distribution;
-    // Set x to a random value in range [0.0, 1.0].
-    self.x = self.unif.sample(&mut self.rng);
-  }
+    // The main function which drives the simulation engine. Applies a randomized
+    // mutation to the sample, thus making a single "step" in the configuration
+    // spaces. The walk is assumed to be ergodic (in simple words, mutate is
+    // assumed to not have any consistent bias.
+    fn mutate(&mut self) {
+        use rand::distributions::Distribution;
+        // Set x to a random value in range [0.0, 1.0].
+        self.x = self.unif.sample(&mut self.rng);
+    }
 }
 
 fn main() {
-  let mut simulation = ergothic::Simulation::new(
-      "mean values of powers of [0..1]");
+    let mut simulation = ergothic::Simulation::new("mean values of powers of [0..1]");
 
-  let mut powers_of_x = Vec::with_capacity(10);
-  for i in 0..10 {
-    // Register a measure corresponding to X to the power of `i`.
-    powers_of_x.push(simulation.add_measure(format!("Mean X^{}", i)));
-  }
-
-  // The entry-point function. It will parse the command line arguments and
-  // set up the simulation parameters.
-  simulation.run(|s: &MySample, ms| {
-    // This is the measurement lambda. Its job is to measure the registered
-    // measures in a given statisticle sample `s` and record the values in `ms`.
+    let mut powers_of_x = Vec::with_capacity(10);
     for i in 0..10 {
-      // Record X^i in the measure associated to i-th power of X.
-      ms.accumulate(powers_of_x[i], s.x.powi(i as i32));
+        // Register a measure corresponding to X to the power of `i`.
+        powers_of_x.push(simulation.add_measure(format!("Mean X^{}", i)));
     }
-  });
+
+    // The entry-point function. It will parse the command line arguments and
+    // set up the simulation parameters.
+    simulation.run(|s: &MySample, ms| {
+        // This is the measurement lambda. Its job is to measure the registered
+        // measures in a given statisticle sample `s` and record the values in `ms`.
+        for i in 0..10 {
+            // Record X^i in the measure associated to i-th power of X.
+            ms.accumulate(powers_of_x[i], s.x.powi(i as i32));
+        }
+    });
 }
